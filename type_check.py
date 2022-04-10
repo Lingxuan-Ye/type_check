@@ -5,7 +5,7 @@ from typing import Iterable, Union
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 __all__ = ["argument_check", "type_check", "element_type_check"]
 
 
@@ -96,6 +96,9 @@ def argument_check(func,
                    *,
                    raise_error: bool = True,
                    raise_warning: bool = False):
+    """
+    This is a decorator.
+    """
 
     @wraps(func)
     def wrapper(*args, **kwargs):

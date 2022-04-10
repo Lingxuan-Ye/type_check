@@ -4,9 +4,8 @@ from typing import Iterable, Union
 
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
-
 __author__ = "Lingxuan Ye"
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 __all__ = ["argument_check", "type_check", "element_type_check"]
 
 
@@ -26,7 +25,31 @@ def _literal(type_: type, with_quotes: bool = True):
         return type_literal
 
 
-def _argument_check(argument, type_required, parameter_name) -> dict:
+def _reform(errors: list):
+    types = []
+    flag = True
+    for index, error in enumerate(errors.copy()):
+        if error.startswith("argument"):
+            if flag:
+                arg_error_index = index
+                template = error.split("'")
+                flag = False
+            type_ = error.split("'")[3]
+            types.append(type_)
+            errors.remove(error)
+    if len(types) <= 1:
+        return
+    type_info = ", ".join(types[0:-1]) + f" or {types[-1]}"
+    template.pop(3)
+    template.insert(3, type_info)
+    arg_error = "'".join(template)
+    errors.insert(arg_error_index, arg_error)
+
+
+def _argument_check(argument,
+                    type_required: type,
+                    parameter_name: str,
+                    __in_recursion: bool = False) -> dict:
     result = {"warning": [], "error": []}
     if type_required is inspect._empty:
         return result
@@ -35,13 +58,15 @@ def _argument_check(argument, type_required, parameter_name) -> dict:
                 + "try to use 'typing.Union' instead"
         result["warning"].append(warning)
         for type_ in type_required:
-            _result = _argument_check(argument, type_, parameter_name)
+            _result = _argument_check(argument, type_, parameter_name, True)
             if _result["is_valid"]:
                 del result["warning"][-1:0:-1]
                 result["error"].clear()
                 break
             result["warning"].extend(_result["warning"])
             result["error"].extend(_result["error"])
+            if not __in_recursion:
+                _reform(result["error"])
         return result
     if type_required is None:
         warning = f"informal annotation for parameter '{parameter_name}', " \
@@ -75,8 +100,9 @@ def argument_check(func,
     @wraps(func)
     def wrapper(*args, **kwargs):
         sig = inspect.signature(func)
-        arguments = sig.bind(*args, **kwargs)
-        arguments.apply_defaults()
+        bound_arguments = sig.bind(*args, **kwargs)
+        bound_arguments.apply_defaults()
+        arguments = bound_arguments.arguments
         parameters = sig.parameters
         error = []
         warning = []

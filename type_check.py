@@ -5,8 +5,8 @@ from typing import Iterable, Union
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.4.0"
-__all__ = ["type_check", "element_type_check"]
+__version__ = "2.4.1"
+__all__ = ["type_check", "element_type_check", "debug"]
 
 
 class Error(Exception):
@@ -154,3 +154,9 @@ def element_type_check(iterable_: Iterable,
             raise Error("\n" + error_info)
         else:
             print(f"Error(s):\n{error_info}\n")
+
+
+@type_check
+def debug(argument, type_required: Union[type, tuple, list, set],
+          parameter_name: str):
+    _type_check(argument, type_required, parameter_name)

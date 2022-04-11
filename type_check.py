@@ -5,7 +5,7 @@ from typing import Iterable
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 __all__ = ["type_check", "element_type_check"]
 
 
@@ -93,7 +93,8 @@ def _type_check(argument,
 
 def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
     """
-    This is a decorator.
+    'raise_error' and 'raise_warning' are always set to default
+    unless explicitly call this function.
     """
 
     @wraps(func)
@@ -111,12 +112,18 @@ def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
             _result = _type_check(argument, annotation, parameter_name)
             error.extend(_result["error"])
             warning.extend(_result["warning"])
-        if raise_error and error:  # len(error) != 0
-            error_info = "\n" + "\n".join(error)
-            raise Error(error_info)
-        if raise_warning and warning:  # len(warning) != 0:
-            warning_info = "\n" + "\n".join(warning)
-            raise Warning(warning_info)
+        if error:  # len(error) != 0
+            error_info = "\n".join(error)
+            if raise_error:
+                raise Error("\n" + error_info)
+            else:
+                print(error_info)
+        if warning:  # len(warning) != 0:
+            warning_info = "\n".join(warning)
+            if raise_warning:
+                raise Warning("\n" + warning_info)
+            else:
+                print(warning_info)
         return func(*args, **kwargs)
 
     return wrapper
@@ -139,7 +146,7 @@ def element_type_check(iterable_: Iterable,
     if not iterable_:  # len(iterable_) == 0
         error_info = "argument 'iterable_' cannot be empty"
         if raise_exception:
-            raise Error("\n" + error_info)
+            raise Error(error_info)
         else:
             return error_info
     if iterable_name == "":
@@ -152,6 +159,6 @@ def element_type_check(iterable_: Iterable,
                 error_info += f", if a(n) {_literal(type(iterable_))} is given"
             break
     if raise_exception:
-        raise Error("\n" + error_info)
+        raise Error(error_info)
     else:
         return error_info

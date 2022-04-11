@@ -47,9 +47,9 @@ def _reform(errors: list):
 
 
 def _type_check(argument,
-                    type_required: type,
-                    parameter_name: str,
-                    __in_recursion: bool = False) -> dict:
+                type_required: type,
+                parameter_name: str,
+                __in_recursion: bool = False) -> dict:
     result = {"error": [], "warning": []}
     if type_required is inspect._empty:
         return result
@@ -91,10 +91,7 @@ def _type_check(argument,
         return result
 
 
-def type_check(func,
-                   *,
-                   raise_error: bool = True,
-                   raise_warning: bool = False):
+def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
     """
     This is a decorator.
     """
@@ -149,7 +146,7 @@ def element_type_check(iterable_: Iterable,
         iterable_name = "_"
     for index, element in enumerate(iterable_):
         error_info = _type_check(element, type_required,
-                                     f"{iterable_name}[{index}]")
+                                 f"{iterable_name}[{index}]")
         if error_info is not None:
             if with_supplement:
                 error_info += f", if a(n) {_literal(type(iterable_))} is given"

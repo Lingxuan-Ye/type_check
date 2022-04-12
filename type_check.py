@@ -5,7 +5,7 @@ from typing import Iterable, Union
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 __all__ = ["type_check", "element_type_check", "debug"]
 
 
@@ -83,8 +83,12 @@ def _type_check(argument,
         result["warning"].append(warning)
         annotation = NoneType
     if not isinstance(argument, annotation):
+        try:
+            type_str = _literal(annotation)
+        except IndexError:
+            type_str = "'" + str(annotation) + "'"
         error = f"argument '{parameter_name}' must be " \
-              + f"{_literal(annotation)}, not {_literal(type(argument))}"
+              + f"{type_str}, not {_literal(type(argument))}"
         result["error"].append(error)
     return result
 
@@ -157,6 +161,5 @@ def element_type_check(iterable_: Iterable,
 
 
 @type_check
-def debug(argument, type_required: Union[type, tuple, list, set],
-          parameter_name: str):
+def debug(argument, type_required, parameter_name: str):
     _type_check(argument, type_required, parameter_name)

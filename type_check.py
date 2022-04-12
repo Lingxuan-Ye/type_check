@@ -5,7 +5,7 @@ from typing import Iterable, Union
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.4.2"
+__version__ = "2.4.3"
 __all__ = ["type_check", "element_type_check", "debug"]
 
 
@@ -133,7 +133,7 @@ def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
 
 @type_check
 def element_type_check(iterable_: Iterable,
-                       type_required: Union[type, tuple, list, set],
+                       type_required,
                        iterable_name: str = "",
                        raise_error: bool = True):
     if not iterable_:  # len(iterable_) == 0

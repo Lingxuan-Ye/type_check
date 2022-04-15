@@ -1,12 +1,15 @@
 import inspect
+import logging
 from functools import wraps
-from typing import Iterable, Union
+from typing import Iterable
 
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.4.3"
-__all__ = ["type_check", "element_type_check", "debug"]
+__version__ = "2.5.0"
+__all__ = ["type_check", "element_type_check", "type_debug"]
+
+logging.basicConfig(format='%(levelname)s:%(message)s\n%(asctime)s')
 
 
 class Error(Exception):
@@ -117,15 +120,15 @@ def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
         if errors:  # len(error) != 0
             error_info = "\n".join((f"- {i}" for i in errors))
             if raise_error:
-                raise Error("\n" + error_info)
+                raise Error(f"\n{error_info}")
             else:
-                print(f"Error(s):\n{error_info}\n")
+                logging.error(f"\n{error_info}")
         if warnings:  # len(warning) != 0:
             warning_info = "\n".join((f"- {i}" for i in warnings))
             if raise_warning:
-                raise Warning("\n" + warning_info)
+                raise Warning(f"\n{warning_info}")
             else:
-                print(f"Warning(s):\n{warning_info}\n")
+                logging.warning(f"\n{warning_info}")
         return func(*args, **kwargs)
 
     return wrapper
@@ -155,11 +158,11 @@ def element_type_check(iterable_: Iterable,
     if errors:  # len(error) != 0
         error_info = "\n".join((f"- {i}" for i in errors))
         if raise_error:
-            raise Error("\n" + error_info)
+            raise Error(f"\n{error_info}")
         else:
-            print(f"Error(s):\n{error_info}\n")
+            logging.error(f"\n{error_info}")
 
 
 @type_check
-def debug(argument, type_required, parameter_name: str):
+def type_debug(argument, type_required, parameter_name: str):
     _type_check(argument, type_required, parameter_name)

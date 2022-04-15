@@ -79,10 +79,10 @@ def _type_check(argument,
         return result
     if annotation is None:
         warning = "informal annotation for " \
-                        + f"parameter '{parameter_name}', " \
-                        + "try to use 'types.NoneType' " \
-                        + "(python 3.10 or later) " \
-                        + "or 'type(None)' instead of 'None'"
+                + f"parameter '{parameter_name}', " \
+                + "try to use 'types.NoneType' " \
+                + "(python 3.10 or later) " \
+                + "or 'type(None)' instead of 'None'"
         result["warning"].append(warning)
         annotation = NoneType
     if not isinstance(argument, annotation):

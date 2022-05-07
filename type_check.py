@@ -1,15 +1,15 @@
 import inspect
 import logging
 from functools import wraps
-from typing import Iterable
+from typing import Iterable, List, NamedTuple, Sequence
 
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.5.0"
+__version__ = "2.6.0"
 __all__ = ["type_check", "element_type_check", "type_debug"]
 
-logging.basicConfig(format='%(levelname)s:%(message)s\n%(asctime)s')
+logging.basicConfig(format='%(levelname)s: %(message)s\n%(asctime)s')
 
 
 class Error(Exception):
@@ -18,6 +18,11 @@ class Error(Exception):
 
 class Warning(Exception):
     pass
+
+
+class _Result(NamedTuple):
+    error: List[str] = []
+    warning: List[str] = []
 
 
 def _literal(type_: type, with_quotes: bool = True):
@@ -57,25 +62,25 @@ def _reform(errors: list):
 def _type_check(argument,
                 annotation,
                 parameter_name: str,
-                __in_recursion: bool = False) -> dict:
-    result = {"error": [], "warning": []}
+                __in_recursion: bool = False) -> _Result:
+    result = _Result()
     if annotation is inspect._empty:
         return result
-    if isinstance(annotation, (list, tuple, set)):
+    if isinstance(annotation, Sequence):
         warning = f"informal annotation for parameter '{parameter_name}', " \
                 + "try to use 'typing.Union' instead of a collection of types"
-        result["warning"].append(warning)
+        result.warning.append(warning)
         for type_ in annotation:
             _result = _type_check(argument, type_, parameter_name, True)
-            result["error"].extend(_result["error"])
-            result["warning"].extend(_result["warning"])
-            if not _result["error"]:  # len(_result["error"]) == 0
-                result["error"].clear()
+            result.error.extend(_result.error)
+            result.warning.extend(_result.warning)
+            if not _result.error:
+                result.error.clear()
                 break
         if not __in_recursion:
-            _deduplicate(result["error"])
-            _reform(result["error"])
-            _deduplicate(result["warning"])
+            _deduplicate(result.error)
+            _reform(result.error)
+            _deduplicate(result.warning)
         return result
     if annotation is None:
         warning = "informal annotation for " \
@@ -83,7 +88,7 @@ def _type_check(argument,
                 + "try to use 'types.NoneType' " \
                 + "(python 3.10 or later) " \
                 + "or 'type(None)' instead of 'None'"
-        result["warning"].append(warning)
+        result.warning.append(warning)
         annotation = NoneType
     if not isinstance(argument, annotation):
         try:
@@ -92,20 +97,23 @@ def _type_check(argument,
             type_str = "'" + str(annotation) + "'"
         error = f"argument '{parameter_name}' must be " \
               + f"{type_str}, not {_literal(type(argument))}"
-        result["error"].append(error)
+        result.error.append(error)
     return result
 
 
 def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
     """
+    check whether the arguments passed are valid when the decorated function
+    is called.
+
     'raise_error' and 'raise_warning' are always set to default
     unless explicitly call this function.
     """
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        errors = []
-        warnings = []
+        error = []
+        warning = []
         sig = inspect.signature(func)
         bound_arguments = sig.bind(*args, **kwargs)
         bound_arguments.apply_defaults()
@@ -115,16 +123,16 @@ def type_check(func, *, raise_error: bool = True, raise_warning: bool = False):
             argument = arguments[parameter_name]
             annotation = parameters[parameter_name].annotation
             _result = _type_check(argument, annotation, parameter_name)
-            errors.extend(_result["error"])
-            warnings.extend(_result["warning"])
-        if errors:  # len(error) != 0
-            error_info = "\n".join((f"- {i}" for i in errors))
+            error.extend(_result.error)
+            warning.extend(_result.warning)
+        if error:
+            error_info = "\n".join((f"- {i}" for i in error))
             if raise_error:
                 raise Error(f"\n{error_info}")
             else:
                 logging.error(f"\n{error_info}")
-        if warnings:  # len(warning) != 0:
-            warning_info = "\n".join((f"- {i}" for i in warnings))
+        if warning:
+            warning_info = "\n".join((f"- {i}" for i in warning))
             if raise_warning:
                 raise Warning(f"\n{warning_info}")
             else:
@@ -139,30 +147,28 @@ def element_type_check(iterable_: Iterable,
                        type_required,
                        iterable_name: str = "",
                        raise_error: bool = True):
-    if not iterable_:  # len(iterable_) == 0
+    if not iterable_:
         error_info = "- argument 'iterable_' cannot be empty"
         if raise_error:
-            raise Error("\n" + error_info)
+            raise Error(f"\n{error_info}")
         else:
-            print(f"Error:\n{error_info}\n")
+            logging.error(f"\n{error_info}")
             return
-    errors = []
-    warnings = []
+    error = []
+    warning = []
     if iterable_name == "":
         iterable_name = "_"
     for index, element in enumerate(iterable_):
         _result = _type_check(element, type_required,
                               f"{iterable_name}[{index}]")
-        errors.extend(_result["error"])
-        warnings.extend(_result["warning"])
-    if errors:  # len(error) != 0
-        error_info = "\n".join((f"- {i}" for i in errors))
+        error.extend(_result.error)
+        warning.extend(_result.warning)
+    if error:
+        error_info = "\n".join((f"- {i}" for i in error))
         if raise_error:
             raise Error(f"\n{error_info}")
         else:
             logging.error(f"\n{error_info}")
 
 
-@type_check
-def type_debug(argument, type_required, parameter_name: str):
-    _type_check(argument, type_required, parameter_name)
+type_debug = _type_check

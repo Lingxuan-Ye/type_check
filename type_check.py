@@ -6,7 +6,7 @@ from typing import Iterable, List, NamedTuple, Sequence
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.6.0"
+__version__ = "2.6.1"
 __all__ = ["type_check", "element_type_check", "type_debug"]
 
 logging.basicConfig(format='%(levelname)s: %(message)s\n%(asctime)s')
@@ -21,8 +21,8 @@ class Warning(Exception):
 
 
 class _Result(NamedTuple):
-    error: List[str] = []
-    warning: List[str] = []
+    error: List[str]
+    warning: List[str]
 
 
 def _literal(type_: type, with_quotes: bool = True):
@@ -63,7 +63,7 @@ def _type_check(argument,
                 annotation,
                 parameter_name: str,
                 __in_recursion: bool = False) -> _Result:
-    result = _Result()
+    result = _Result([], [])
     if annotation is inspect._empty:
         return result
     if isinstance(annotation, Sequence):

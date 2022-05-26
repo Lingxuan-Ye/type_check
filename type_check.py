@@ -6,7 +6,7 @@ from typing import Iterable, List, NamedTuple, Sequence
 NoneType = type(None)  # from types import NoneType (python 3.10 or later)
 
 __author__ = "Lingxuan Ye"
-__version__ = "2.6.1"
+__version__ = "2.6.2"
 __all__ = ["type_check", "element_type_check", "type_debug"]
 
 logging.basicConfig(format='%(levelname)s: %(message)s\n%(asctime)s')
@@ -23,14 +23,6 @@ class Warning(Exception):
 class _Result(NamedTuple):
     error: List[str]
     warning: List[str]
-
-
-def _literal(type_: type, with_quotes: bool = True):
-    type_literal = str(type_).split("'")[1]
-    if with_quotes:
-        return "'" + type_literal + "'"
-    else:
-        return type_literal
 
 
 def _deduplicate(list_: list):
@@ -92,11 +84,11 @@ def _type_check(argument,
         annotation = NoneType
     if not isinstance(argument, annotation):
         try:
-            type_str = _literal(annotation)
+            type_str = annotation.__name__
         except IndexError:
             type_str = "'" + str(annotation) + "'"
         error = f"argument '{parameter_name}' must be " \
-              + f"{type_str}, not {_literal(type(argument))}"
+              + f"'{type_str}', not '{argument.__class__.__name__}'"
         result.error.append(error)
     return result
 
